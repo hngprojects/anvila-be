@@ -18,7 +18,8 @@ jobs:
       - name: Archive application build
         run: |
           mkdir app
-          cp -r alembic api qa_tests scripts tests requirements.txt *.py alembic.ini app
+          cp -r alembic api qa_tests scripts tests requirements.txt alembic.ini app/
+          cp *.py app/
           tar -czf python-dev.tar.gz app
       - name: Copy Artifacts to server
         run: |
