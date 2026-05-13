@@ -9,11 +9,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  on-success:
+  deploy-dev:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Archive application build
         run: |
@@ -21,12 +21,14 @@ jobs:
           cp -r alembic api qa_tests scripts tests requirements.txt alembic.ini app/
           cp *.py app/
           tar -czf python-dev.tar.gz app
+
       - name: Copy Artifacts to server
         run: |
           sshpass -p ${{ secrets.PASSWORD }} scp -o StrictHostKeyChecking=no python-dev.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/tmp/python
           rm -f python-dev.tar.gz
-      - name: Use SSH Action
-        uses: appleboy/ssh-action@v0.1.8
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
@@ -39,7 +41,6 @@ jobs:
             source venv/bin/activate
             cd app
             pip install -r requirements.txt
-            alembic revision --autogenerate
             alembic upgrade head
             cd ..
             pm2 restart dev-ecosystem.config.js || pm2 start dev-ecosystem.config.js

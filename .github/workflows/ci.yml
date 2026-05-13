@@ -5,7 +5,6 @@ on:
     types: [opened, synchronize, reopened]
     paths-ignore:
       - "README.md"
-      # - ".github/workflows/**"
 
 jobs:
   build-and-test:
@@ -13,25 +12,30 @@ jobs:
 
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:14.12
         env:
           POSTGRES_USER: "username"
           POSTGRES_PASSWORD: "password"
           POSTGRES_DB: "test"
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U username -d test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -45,7 +49,7 @@ jobs:
       - name: Copy env file
         run: cp .env.sample .env
 
-      - name: Run app
+      - name: Run app smoke test
         run: |
           python3 main.py &
           pid=$!
@@ -60,9 +64,8 @@ jobs:
 
       - name: Run migrations
         run: |
-          alembic revision --autogenerate
           alembic upgrade head
 
       - name: Run tests
         run: |
-          PYTHONPATH=. pytest
+          PYTHONPATH=. pytest --tb=short -q

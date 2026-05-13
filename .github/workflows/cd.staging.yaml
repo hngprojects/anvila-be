@@ -9,23 +9,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  on-success:
+  deploy-staging:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Archive application build
         run: |
           mkdir app
-          cp -r alembic api qa_tests scripts tests requirements.txt *.py alembic.ini app
+          cp -r alembic api qa_tests scripts tests requirements.txt alembic.ini app/
+          cp *.py app/
           tar -czf python-staging.tar.gz app
+
       - name: Copy Artifacts to server
         run: |
           sshpass -p ${{ secrets.PASSWORD }} scp -o StrictHostKeyChecking=no python-staging.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/tmp/python
           rm -f python-staging.tar.gz
-      - name: Use SSH Action
-        uses: appleboy/ssh-action@v0.1.8
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
@@ -38,5 +41,6 @@ jobs:
             source venv/bin/activate
             cd app
             pip install -r requirements.txt
-            alembic revision --autogenerate
             alembic upgrade head
+            cd ..
+            pm2 restart staging-ecosystem.config.js || pm2 start staging-ecosystem.config.js
