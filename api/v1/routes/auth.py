@@ -81,7 +81,7 @@ def register(
 
     access_token = user_service.create_access_token(user_id=user.id)
     refresh_token = user_service.create_refresh_token(user_id=user.id)
-    cta_link = "https://anchor-python.teams.hng.tech/about-us"
+    cta_link = f"{settings.ANCHOR_PYTHON_BASE_URL}/about-us"
 
     # create an organization for the user
     org = CreateUpdateOrganisation(
@@ -161,7 +161,7 @@ def resend_verification_email(request: Request, data: UserEmailSender, backgroun
     verification_token = user_service.create_verification_token(user.id)
     base_url = str(request.base_url).strip("/")
     verification_link = f"{base_url}/api/v1/auth/verify-email?token={verification_token}"
-    cta_link = 'https://anchor-python.teams.hng.tech/about-us'
+    cta_link = f"{settings.ANCHOR_PYTHON_BASE_URL}/about-us"
 
     background_tasks.add_task(
         send_email,
