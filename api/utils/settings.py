@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 # Use this to build paths inside the project
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 class Settings(BaseSettings):
     """Class to hold application's config values."""

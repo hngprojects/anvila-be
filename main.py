@@ -1,8 +1,6 @@
-import uvicorn
-from fastapi.staticfiles import StaticFiles
 import uvicorn, os
 from sqlalchemy.exc import IntegrityError
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, FastAPI, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -10,10 +8,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.requests import Request
 from starlette.middleware.sessions import SessionMiddleware  # required by google oauth
 
 from api.utils.json_response import JsonResponseDict
@@ -143,14 +139,14 @@ async def validation_exception(request: Request, exc: RequestValidationError):
 async def integrity_exception(request: Request, exc: IntegrityError):
     """Integrity error exception handlers"""
 
-    logger.exception(f"Exception occured; {exc}")
+    logger.exception(f"Integrity error occured: {exc}")
 
     return JSONResponse(
         status_code=400,
         content={
             "status": False,
             "status_code": 400,
-            "message": f"An unexpected error occurred: {exc}",
+            "message": "A database integrity error occurred. This might be due to a duplicate entry or constraint violation.",
         },
     )
 
@@ -159,7 +155,7 @@ async def integrity_exception(request: Request, exc: IntegrityError):
 async def global_exception(request: Request, exc: Exception):
     """Other exception handlers"""
 
-    logger.exception(f"Exception occured; {exc}")
+    logger.exception(f"Unhandled exception occured: {exc}")
 
     await send_error_to_telex(request.method, request.url.path, exc)
 
@@ -168,7 +164,7 @@ async def global_exception(request: Request, exc: Exception):
         content={
             "status": False,
             "status_code": 500,
-            "message": f"An unexpected error occurred: {exc}",
+            "message": "An unexpected internal server error occurred. Please contact support if this persists.",
         },
     )
 
