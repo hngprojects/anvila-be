@@ -1,3 +1,4 @@
+import logging
 import random
 import string
 from typing import Any, Optional, Annotated
@@ -10,7 +11,7 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from api.core.base.services import Service
 from api.core.dependencies.email_sender import send_email
@@ -25,6 +26,8 @@ from api.v1.schemas import user
 from api.v1.schemas import token
 from api.v1.services.notification_settings import notification_setting_service
 from api.v1.services.newsletter import NewsletterService, EmailSchema
+
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -60,7 +63,7 @@ class UserService(Service):
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                         detail=f"Invalid value for '{param}'. Must be a boolean.",
                     )
-                if value == None:
+                if value is None:
                     continue
                 if hasattr(User, param):
                     filters.append(getattr(User, param) == value)
@@ -407,7 +410,7 @@ class UserService(Service):
             token_data = user.TokenData(id=user_id)
 
         except JWTError as err:
-            print(err)
+            logger.error(f"JWT decode error: {err}")
             raise credentials_exception
 
         return token_data
@@ -598,7 +601,7 @@ class UserService(Service):
 
         if (
             token.token != schema.token
-            or token.expiry_time < datetime.utcnow()
+            or token.expiry_time < datetime.now(timezone.utc)
         ):
             raise HTTPException(
                 status_code=401, detail="Invalid email or token"
@@ -613,7 +616,7 @@ class UserService(Service):
         """Generate a 6-digit token"""
         return "".join(
             random.choices(string.digits, k=6)
-        ), datetime.utcnow() + timedelta(minutes=1)
+        ), datetime.now(timezone.utc) + timedelta(minutes=1)
 
     def get_users_by_role(self, db: Session, role_id: str, current_user: User):
         """Function to get all users by role"""

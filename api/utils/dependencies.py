@@ -11,8 +11,6 @@ from .config import SECRET_KEY, ALGORITHM
 
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -33,16 +31,14 @@ def get_current_user(
         if user_id is None:
             logger.error("User ID not found in token")
             raise credentials_exception
-        logger.debug(f"Token decoded successfully, user ID: {user_id}")
     except PyJWTError as e:
         logger.error(f"JWT error: {e}")
         raise credentials_exception
 
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
-        logger.error("User not found")
+        logger.error("User not found for token")
         raise credentials_exception
-    logger.debug(f"User found: {user}")
     return user
 
 

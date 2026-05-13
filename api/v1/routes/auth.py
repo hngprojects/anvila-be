@@ -1,4 +1,3 @@
-import logging
 from datetime import timedelta
 from fastapi.responses import JSONResponse
 from jose import ExpiredSignatureError, JWTError
@@ -51,14 +50,10 @@ from api.v1.schemas.totp_device import (
 from api.v1.services.totp import totp_service
 from api.utils.settings import settings
 
+from api.utils.logger import logger
+
 auth = APIRouter(prefix="/auth", tags=["Authentication"])
-
-# Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
-
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
   
 @auth.post("/register", status_code=status.HTTP_201_CREATED, response_model=auth_response)
 @limiter.limit("5/minute")  # Limit to 5 requests per minute per IP
@@ -156,7 +151,7 @@ def verify_email(token: str, db: Session = Depends(get_db)):
 def resend_verification_email(request: Request, data: UserEmailSender, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Resends the email verification link"""
     email = data.email
-    print(email)
+    logger.debug(f"Resending verification email to: {email}")
     user = user_service.user_to_verify(email, db)
     verification_token = user_service.create_verification_token(user.id)
     base_url = str(request.base_url).strip("/")
@@ -285,7 +280,7 @@ def logout(
 ):
     """Endpoint to log a user out of their account"""
 
-    response = success_response(status_code=200, message="User logged put successfully")
+    response = success_response(status_code=200, message="User logged out successfully")
 
     # Delete refresh token from cookies
     response.delete_cookie(key="refresh_token")

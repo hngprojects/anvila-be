@@ -1,9 +1,7 @@
-# Ignore node_modules directory
-node_modules
-
 # Ignore Python virtual environment directories
 venv
 .venv
+env
 
 # Ignore MacOS system files
 .DS_Store
@@ -27,14 +25,24 @@ dist/
 # Ignore compiled Python files
 __pycache__/
 *.pyc
+*.pyo
 
-# Ignore Docker-related files (uncomment if needed)
-# Dockerfile
-# docker-compose.yml
+# Ignore Docker-related files
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Ignore CI/CD and docs
+.github/
+README.md
+SECURITY.md
+LICENSE
 
 # Ignore coverage reports
 coverage/
 *.cover
+.coverage
+htmlcov/
 
 # Ignore IDE and editor-specific files
 .vscode/
@@ -44,3 +52,12 @@ coverage/
 # Ignore test results
 test-output/
 reports/
+
+# Ignore environment files
+.env
+.env.*
+!.env.sample
+
+# Ignore media uploads
+media/
+static/profile_images/

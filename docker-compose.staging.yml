@@ -1,32 +1,56 @@
 services:
   app_staging:
     image: anchor-python-bp-staging:latest
-    command: ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 7001"]
+    command: ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 7001 --workers 2"]
     container_name: app_staging
+    env_file:
+      - .env
     networks:
       - hng-network
     restart: unless-stopped
     ports:
-      - 7008:7001
-    working_dir: /app 
-    volumes:
-      - .env:/app/.env    
+      - "7008:7001"
+    working_dir: /app
     depends_on:
-      - staging_db
+      staging_db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7001/probe"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
 
   staging_db:
     image: postgres:14.12
     container_name: staging_db
-    restart: always
+    restart: unless-stopped
     volumes:
       - staging_db:/var/lib/postgresql/data
-      - .env:/app/.env
+    env_file:
+      - .env
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD?Variable not set}
       - POSTGRES_USER=${DB_USER?Variable not set}
       - POSTGRES_DB=${DB_NAME?Variable not set}
     networks:
       - hng-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
 
 volumes:
   staging_db:
