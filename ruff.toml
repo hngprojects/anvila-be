@@ -1,0 +1,33 @@
+# anvila-be — initial conservative ruff selection.
+#
+# Phase 2 introduces ruff to CI. The rule selection is deliberately narrow:
+# only high-signal failure rules that catch broken code, not style.
+#
+# Reason: the codebase has accumulated formatting/style drift. Enabling broader
+# rule sets here would turn the CI introduction PR into a whole-codebase
+# lint-cleanup, which is the wrong scope. A future dedicated lint-hardening PR
+# broadens this selection one category at a time.
+
+target-version = "py312"
+line-length = 100
+
+[lint]
+# Minimum-viable selection. Each rule chosen because it catches ZERO violations
+# on the codebase at Phase 2 introduction (verified locally with
+# `ruff check --statistics` before this file was committed).
+#
+# F821 was retained after the only violation (unreachable dead code in
+# api/v1/routes/waitlist.py:156) was removed as part of the Phase 2 PR — a
+# behavior-neutral deletion that keeps high-signal undefined-name protection in
+# CI from day one.
+#
+# Deliberately deferred to a future lint-hardening PR:
+#   F811 — 52 violations on this codebase (duplicate imports across
+#          api/v1/routes and tests; one duplicate test function). The
+#          duplicate test function is a real test-coverage gap.
+select = [
+    "E9",    # pycodestyle: runtime/syntax errors (IndentationError, etc.)
+    "F821",  # pyflakes: undefined name (causes NameError at runtime)
+    "F823",  # pyflakes: local variable referenced before assignment
+]
+ignore = []
